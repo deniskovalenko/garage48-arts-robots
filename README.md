@@ -9,5 +9,6 @@ And also pretty cool tail/tentacle with many possible weird/fun applications.
  * To disable motion triggering (to avoid noizy distraction during presentations of peers during hackathon) we've used Magnet detection using Arduino_LSM9DS1 library. (We were too short on time to add On/Off switch) 
  * Proto-threading patter is used to deal with concurrency
 
+P.S. LasteVanker means baby-stroller in Estonian
  
  
