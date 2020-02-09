@@ -33,7 +33,7 @@ limitations under the License.
 //DENYS STUFF
 #include <Servo.h>
 Servo myservo;
-int range = 150;
+int range = 45;
 int pos = 0;    // variable to store the servo position
 boolean increaseServoAngle = true; //direction of angle change.
 boolean pendulumIsOn = false;
@@ -141,7 +141,7 @@ void respondToSound(tflite::ErrorReporter* error_reporter,
   // If last_command_time is non-zero but was >5 seconds ago, zero it
   // and switch off the LED.
   if (last_command_time != 0) {
-    if (last_command_time < (current_time - 5000)) {
+    if (last_command_time < (current_time - 10000)) {
       last_command_time = 0;
 
       //todo turn the pendulum off;
@@ -161,18 +161,19 @@ void respondToSound(tflite::ErrorReporter* error_reporter,
 }
 
 void moveServo() {
+  //if zero gravity swing in opposite direction
   if (!pendulumIsOn) {
     return;
   }
   if (increaseServoAngle) { //moving up;
     myservo.write(pos); // goes from 0 degrees to 180 degrees
-    pos += 1;
+    pos += 60;
     if (pos >= range) {
       increaseServoAngle = false;
     }
   } else {
     myservo.write(pos);
-    pos -= 1;
+    pos -= 45;
     if (pos <= 0) {
       increaseServoAngle = true;
     }
@@ -258,10 +259,10 @@ void setup() {
 
   myservo.attach(9);  
 
-  servoThread.setInterval(4);
+  servoThread.setInterval(200);
   servoThread.onRun(moveServo);
 
-  voiceThread.setInterval(20);
+  voiceThread.setInterval(10);
   voiceThread.onRun(detectVoice);
 
 }
