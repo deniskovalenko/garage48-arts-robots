@@ -173,7 +173,7 @@ void moveServo() {
     }
   } else {
     myservo.write(pos);
-    pos -= 45;
+    pos -= 60;
     if (pos <= 0) {
       increaseServoAngle = true;
     }
@@ -259,10 +259,10 @@ void setup() {
 
   myservo.attach(9);  
 
-  servoThread.setInterval(200);
+  servoThread.setInterval(50);
   servoThread.onRun(moveServo);
 
-  voiceThread.setInterval(10);
+  voiceThread.setInterval(20);
   voiceThread.onRun(detectVoice);
 
 }
