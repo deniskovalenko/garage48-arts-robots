@@ -34,7 +34,7 @@ int range = 45;
 int pos = 0;    // variable to store the servo position
 boolean increaseServoAngle = true; //direction of angle change.
 boolean pendulumIsOn = false;
-boolean magneticFuse = false;
+boolean magnetFuse = false;
 //#include <pt.h>
 //static struct pt t1, t2; //protothread stuff
 #include <Thread.h>
@@ -160,9 +160,14 @@ void respondToSound(tflite::ErrorReporter* error_reporter,
 
 void moveServo() {
   //if zero gravity swing in opposite direction
-  if (!pendulumIsOn || magnetFuse) {
+  if (!pendulumIsOn) {
     return;
   }
+  if (magnetFuse==true) {
+    Serial.println("Magnet Fuse is ON!");
+    return;
+  }
+  
   if (increaseServoAngle) { //moving up;
     myservo.write(pos); // goes from 0 degrees to 180 degrees
     pos += 60;
@@ -183,12 +188,19 @@ void checkMagnet() {
 
   if (IMU.magneticFieldAvailable()) {
     IMU.readMagneticField(x, y, z);
+    Serial.print(x);
+    Serial.print('\t');
+    Serial.print(y);
+    Serial.print('\t');
+    Serial.println(z);
 
-  //magnet is on our head :) 
-  if (x < -300 || x > 300 || y < -300 || y > 300 || z < -300 || z > 300) {
-    boolean magneticFuse = true;  
-  } else {
-    boolean magneticFuse = false; //no magnet, we can work
+     //magnet is on our head :) 
+    if (x < -300 || x > 300 || y < -300 || y > 300 || z < -300 || z > 300) {
+      Serial.println("Magnet Fuse turned ON!");
+      magnetFuse = true;  
+    } else {
+      magnetFuse = false; //no magnet, we can work
+    } 
   }
 }
 
@@ -276,8 +288,6 @@ void setup() {
     Serial.println("Failed to initialize IMU!");
     while (1);
   }
-  Serial.print("Magnetic field sample rate = ");
-  Serial.print(IMU.magneticFieldSampleRate());
 
   servoThread.setInterval(50);
   servoThread.onRun(moveServo);
@@ -287,7 +297,6 @@ void setup() {
 
   magnetThread.setInterval(100);
   magnetThread.onRun(checkMagnet);
-  
 
 }
 
@@ -306,6 +315,6 @@ void loop() {
 
   if(magnetThread.shouldRun()){
   // Yes, the Thread should run, let's run it
-    voiceThread.run();
+    magnetThread.run();
   }
 }
