@@ -1,11 +1,8 @@
 /* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
     http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,7 +11,7 @@ limitations under the License.
 ==============================================================================*/
 
 #include <TensorFlowLite.h>
-
+#include <Arduino_LSM9DS1.h>
 #include "main_functions.h"
 
 #include "audio_provider.h"
@@ -37,6 +34,7 @@ int range = 45;
 int pos = 0;    // variable to store the servo position
 boolean increaseServoAngle = true; //direction of angle change.
 boolean pendulumIsOn = false;
+boolean magneticFuse = false;
 //#include <pt.h>
 //static struct pt t1, t2; //protothread stuff
 #include <Thread.h>
@@ -162,7 +160,7 @@ void respondToSound(tflite::ErrorReporter* error_reporter,
 
 void moveServo() {
   //if zero gravity swing in opposite direction
-  if (!pendulumIsOn) {
+  if (!pendulumIsOn || magnetFuse) {
     return;
   }
   if (increaseServoAngle) { //moving up;
@@ -180,9 +178,24 @@ void moveServo() {
   }
 }
 
+void checkMagnet() {
+  float x, y, z;
+
+  if (IMU.magneticFieldAvailable()) {
+    IMU.readMagneticField(x, y, z);
+
+  //magnet is on our head :) 
+  if (x < -300 || x > 300 || y < -300 || y > 300 || z < -300 || z > 300) {
+    boolean magneticFuse = true;  
+  } else {
+    boolean magneticFuse = false; //no magnet, we can work
+  }
+}
+
 
 Thread servoThread = Thread();
 Thread voiceThread = Thread();
+Thread magnetThread = Thread();
 
 
 // The name of this function is important for Arduino compatibility.
@@ -259,11 +272,22 @@ void setup() {
 
   myservo.attach(9);  
 
+  if (!IMU.begin()) {
+    Serial.println("Failed to initialize IMU!");
+    while (1);
+  }
+  Serial.print("Magnetic field sample rate = ");
+  Serial.print(IMU.magneticFieldSampleRate());
+
   servoThread.setInterval(50);
   servoThread.onRun(moveServo);
 
   voiceThread.setInterval(20);
   voiceThread.onRun(detectVoice);
+
+  magnetThread.setInterval(100);
+  magnetThread.onRun(checkMagnet);
+  
 
 }
 
@@ -276,6 +300,11 @@ void loop() {
   }
 
   if(voiceThread.shouldRun()){
+  // Yes, the Thread should run, let's run it
+    voiceThread.run();
+  }
+
+  if(magnetThread.shouldRun()){
   // Yes, the Thread should run, let's run it
     voiceThread.run();
   }
